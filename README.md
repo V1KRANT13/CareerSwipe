@@ -1,69 +1,58 @@
-# CareerSwipe AI: Intelligent Multi-Agent Career & Job Matching Platform
+# CareerSwipe | Supervised ML Pipeline for Job Matching & Recommendation
 
-[![CI (Linux)](https://github.com/V1KRANT13/CareerSwipe/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/V1KRANT13/CareerSwipe/actions/workflows/test.yml)
-[![Python 3.13+](https://img.shields.io/badge/python-3.13%2B-blue.svg)](https://www.python.org/downloads/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![PyTorch](https://img.shields.io/badge/PyTorch-EE4C2C?style=flat&logo=pytorch&logoColor=white)](https://pytorch.org/)
-[![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
-**CareerSwipe AI** is an enterprise-grade, asynchronous AI-powered career platform designed to modernize job discovery and matching. By combining a swipe-driven user interface with Transformer-based semantic embeddings, heuristic logistic scoring, and LLM-driven insight generation, CareerSwipe AI delivers a highly accurate, observable, and interactive job application workflow.
-
-Unlike simple wrapper applications, CareerSwipe AI emphasizes robust software engineering, modular clean architecture, and asynchronous MLOps practices to process candidates and job postings at scale.
-
----
+**CareerSwipe** is an end-to-end Machine Learning system designed to modernize job discovery. It frames job matching as a supervised binary classification problem, combining Transformer-based semantic embeddings with engineered tabular features to predict candidate-job fit. The system includes a robust data ingestion pipeline, a Scikit-Learn inference engine, and an LLM-driven explanation module.
 
 ## 📋 Table of Contents
-
-- [Overview & Key Features](#-overview--key-features)
-- [System Workflow & Architecture](#-system-workflow--architecture)
-- [AI & ML Matching Engine](#-ai--ml-matching-engine)
-- [Tech Stack & System Components](#-tech-stack--system-components)
-- [API Endpoints Overview](#-api-endpoints-overview)
-- [Database & Schema Architecture](#-database--schema-architecture)
-- [Installation & Quick Start](#-installation--quick-start)
-- [Environment Variables](#-environment-variables)
-- [Testing & Quality Assurance](#-testing--quality-assurance)
-- [Docker Deployment](#-docker-deployment)
-- [License](#-license)
+- [Overview & Key Features](#overview--key-features)
+- [🧠 ML Model & Feature Engineering](#-ml-model--feature-engineering)
+- [🏗️ System Workflow & Architecture](#️-system-workflow--architecture)
+- [📊 Model Evaluation & Metrics](#-model-evaluation--metrics)
+- [🛠️ Tech Stack](#️-tech-stack)
+- [💻 Installation & Quick Start](#-installation--quick-start)
+- [🧪 Testing](#-testing)
 
 ---
 
 ## 🌟 Overview & Key Features
 
-### 1. Multi-Source Autonomous Ingestion
-- Unified web-scraping pipeline designed to fetch, clean, and normalize job data from multiple remote career platforms (e.g., Remotive, RemoteOK, Jobicy).
-- Deduplication and automated keyword extraction ensure clean data insertion into the relational database.
+*   **Multi-Source Autonomous Ingestion:** A unified web-scraping pipeline designed to fetch, clean, normalize, and deduplicate job data from multiple remote career platforms (Remotive, RemoteOK, Jobicy) at scale.
+*   **Supervised Matching Engine:** Predicts match probabilities using a Scikit-Learn Logistic Regression model trained on historical user interactions (swipes) and engineered similarity features.
+*   **Semantic NLP Search:** Employs Hugging Face Transformers (`all-MiniLM-L6-v2`) and PyTorch to generate dense vector representations of candidate resumes and job descriptions for cosine similarity matching.
+*   **Explainable AI (XAI):** Integrates Google GenAI SDK (Gemini Pro) to synthesize actionable feedback, generating "Why You Match" summaries to solve the "black-box ML" problem.
+*   **Automated Resume Parsing:** Extracts unstructured text from candidate PDF/DOCX files to isolate contact details, education, and technical skills for dynamic user profile generation.
+*   **Asynchronous FastAPI Architecture:** Asynchronous routes powered by `uvicorn` and `asyncio` for low-latency, high-throughput inference serving.
 
-### 2. Hybrid Matching Pipeline (Scikit-Learn + PyTorch)
-- **Semantic Vector Search**: Employs Hugging Face Transformers (`all-MiniLM-L6-v2`) and PyTorch to generate high-dimensional embeddings for candidate resumes and job descriptions.
-- **Logistic Regression Scoring**: Predicts match probabilities based on candidate interactions, skill overlap percentages, and domain experience alignment.
+---
 
-### 3. Generative AI RAG & Insights Engine
-- Integrates Google GenAI SDK (Gemini Pro) / Ollama LLM pipelines to synthesize actionable feedback.
-- Solves the "black-box ML" problem by giving candidates clear "Why You Match" summaries, highlighting key technical strengths and skill gaps.
+## 🧠 ML Model & Feature Engineering
 
-### 4. Automated Resume Parser
-- Extracts unstructured text from candidate PDF and DOCX files.
-- Automatically isolates contact details, education history, and technical skill stacks to build dynamic user profiles.
+The core recommendation engine is framed as a **supervised binary classification task**. User-job pairs are labeled based on user swipe actions (apply/save = 1, skip = 0). 
 
-### 5. Asynchronous FastAPI Architecture
-- Asynchronous routes powered by `uvicorn` and `asyncio` for low-latency job feed generation.
-- Decoupled service layers implementing Clean Architecture and Dependency Inversion principles.
+### Engineered Features (7)
+1.  **Skill Overlap:** Jaccard similarity between candidate skills and job requirements.
+2.  **Semantic Similarity:** Cosine similarity between Transformer embeddings (`all-MiniLM-L6-v2`) of the resume and job description.
+3.  **Location Match:** Binary indicator if the job location aligns with candidate preferences.
+4.  **Seniority Match:** Alignment between candidate experience level and job seniority.
+5.  **Title Keyword Match:** Overlap between candidate's current title and job title.
+6.  **Text Lengths:** Length of the resume and job description (proxy for information density).
+7.  **Domain Alignment:** Indicator of industry/domain overlap between candidate and company.
+
+### Training & Inference
+*   **Algorithm:** Scikit-Learn Logistic Regression.
+*   **Training Pipeline:** Supervised learning using a stratified 80/20 train-test split to ensure class balance.
+*   **Inference:** The model outputs a calibrated probability score (0.0 to 1.0) which is used to rank and generate the personalized job feed.
 
 ---
 
 ## 🏗️ System Workflow & Architecture
 
-CareerSwipe AI is structured around an event-driven data and inference pipeline. The system operates through the following core operational flow:
+CareerSwipe operates through an event-driven data and inference pipeline:
 
-1. **Ingestion & Normalization**: Automated background scrapers pull raw job postings, normalize data fields, and store them securely[cite: 8].
-2. **Candidate Profiling**: Users upload resumes which are parsed to extract structured competencies and build embedding profiles[cite: 8].
-3. **Hybrid Inference**: The FastAPI backend queries the recommendation engine, combining PyTorch Transformer cosine similarity with logistic scoring[cite: 8].
-4. **Insight Generation**: LLMs synthesize explanation rationales on-demand[cite: 8].
-5. **State Interaction**: User swipes persist actions (saves, applies, skips) to refine future recommendations[cite: 8].
-
-The following diagram outlines the overall component architecture:
+1.  **Ingestion & Normalization:** Automated background scrapers pull raw job postings, normalize data fields, and store them in a relational database.
+2.  **Candidate Profiling:** Users upload resumes which are parsed to extract structured competencies and build embedding profiles.
+3.  **Hybrid Inference:** The FastAPI backend queries the recommendation engine, combining PyTorch Transformer cosine similarity with Logistic Regression scoring.
+4.  **Insight Generation:** LLMs synthesize explanation rationales on-demand.
+5.  **State Interaction:** User swipes persist actions (saves, applies, skips) to act as ground truth labels for future model retraining.
 
 ```mermaid
 graph TD
@@ -85,15 +74,17 @@ graph TD
     end
 
     subgraph AI & ML Intelligence
-        G --> H1[PyTorch & Transformer Embeddings]
-        D --> H2[Logistic Match Scorer]
-        E --> H3[LLM RAG Insight Generator]
+        G --> H1[Resume & JD Embedding Generation]
+        D --> H2[Feature Engineering Pipeline]
+        H1 --> H2
+        H2 --> H3[Logistic Regression Classifier]
+        H3 --> H4[Probability Score & Ranking]
+        E --> H5[LLM RAG Insight Generator]
     end
 
     subgraph API & UI Interaction
-        H1 --> I[Scored Recommendation Feed]
-        H2 --> I
-        H3 --> I
+        H4 --> I[Scored Recommendation Feed]
+        H5 --> I
         I --> J[Interactive Swipe UI]
         J --> K[User Action State Persistence]
         K --> D
